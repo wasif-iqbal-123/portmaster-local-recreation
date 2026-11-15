@@ -1,0 +1,10 @@
+# Generated build outputs and offline caches
+target/
+.cargo/
+.tools/
+.tmp/
+.t1-verification/
+.t2-verification/
+.t4-verification/
+src-tauri/gen/
+*.log
