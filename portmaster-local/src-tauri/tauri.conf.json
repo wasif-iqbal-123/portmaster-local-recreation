@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Portmaster-Local",
+  "version": "0.1.0",
+  "identifier": "com.portmaster.local",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Portmaster-Local",
+        "width": 1000,
+        "height": 720,
+        "minWidth": 720,
+        "minHeight": 520,
+        "resizable": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Local DNS filtering and per-app connection blocking",
+    "longDescription": "Portmaster-Local runs a local DNS resolver, updates public filter lists, monitors connections, and applies per-app Windows Firewall rules."
+  }
+}

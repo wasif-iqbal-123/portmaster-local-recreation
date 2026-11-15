@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portmaster-Local</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Portmaster-Local</h1>
+      <p id="status" class="muted">Connecting…</p>
+      <p id="update-status" class="small muted">No filter update running.</p>
+    </div>
+    <div class="top-actions">
+      <button id="refresh">Refresh</button>
+      <button id="update">Update filters</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Summary">
+    <div class="card"><span>DNS UDP</span><strong id="dns-udp">—</strong></div>
+    <div class="card"><span>DNS TCP</span><strong id="dns-tcp">—</strong></div>
+    <div class="card"><span>Queries</span><strong id="stat-queries">0</strong></div>
+    <div class="card"><span>Blocked</span><strong id="stat-blocked">0</strong></div>
+    <div class="card"><span>Forwarded</span><strong id="stat-forwarded">0</strong></div>
+    <div class="card"><span>Blocked IPs</span><strong id="stat-blocked-ips">0</strong></div>
+    <div class="card"><span>Listed domains</span><strong id="stat-domains">0</strong></div>
+  </section>
+  <p id="dns-detail" class="small muted pad-x">DNS listener status unavailable.</p>
+
+  <nav class="tabs" aria-label="Sections">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="filters">Filters</button>
+    <button class="tab" data-tab="rules">Rules &amp; firewall</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <main>
+    <section id="tab-overview" class="panel">
+      <h2>Live connections</h2>
+      <p class="muted">Polled from this machine. Only local DNS clients can be mapped to a process.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Process</th><th>PID</th><th>Proto</th><th>Local</th><th>Remote</th><th>State</th><th>Bytes out / in</th></tr></thead>
+          <tbody id="connections-body"></tbody>
+        </table>
+      </div>
+
+      <h2>Activity log</h2>
+      <div class="row-actions"><button id="clear-logs" class="quiet">Clear log</button></div>
+      <ul id="logs" class="logs"></ul>
+    </section>
+
+    <section id="tab-filters" class="panel hidden">
+      <h2>Filter categories</h2>
+      <p class="muted">These are Portmaster's broad category umbrellas. The default categories (Ads &amp; Trackers, Malware, Mixed Ads/Trackers/Malware and Unbreak) are on; opt into the rest when needed. Every list inside a category follows that category's checkbox.</p>
+      <div class="row-actions">
+        <button id="download-all" class="quiet">Download all lists</button>
+      </div>
+      <div id="category-list" class="category-list"></div>
+
+      <h2>Add a custom source</h2>
+      <form id="source-form" class="form-grid">
+        <label>Name<input name="name" placeholder="My block list" required></label>
+        <label>URL<input name="url" type="url" placeholder="https://example.com/list.txt" required></label>
+        <label>Format
+          <select name="format">
+            <option value="hosts">hosts</option>
+            <option value="adblock">adblock</option>
+            <option value="wildcard" selected>wildcard</option>
+            <option value="plain">plain</option>
+          </select>
+        </label>
+        <label>Category
+          <select name="category">
+            <option value="Ads &amp; Trackers">Ads &amp; Trackers</option>
+            <option value="Malware">Malware</option>
+            <option value="Deception">Deception</option>
+            <option value="Mixed Ads/Trackers/Malware">Mixed Ads/Trackers/Malware</option>
+            <option value="NSFW">NSFW</option>
+            <option value="Big Tech">Big Tech</option>
+            <option value="Experiments">Experiments</option>
+            <option value="Unbreak Popular Websites">Unbreak Popular Websites</option>
+          </select>
+        </label>
+        <button type="submit">Add source</button>
+      </form>
+    </section>
+
+    <section id="tab-rules" class="panel hidden">
+      <h2>Custom domain rules</h2>
+      <form id="custom-form" class="form-grid compact">
+        <label>Action
+          <select name="action"><option value="block">block</option><option value="allow">allow</option></select>
+        </label>
+        <label>Domain<input name="domain" placeholder="example.com" required></label>
+        <button type="submit">Add domain</button>
+      </form>
+      <div id="custom-lists" class="chips"></div>
+
+      <h2>Per-app rules</h2>
+      <p class="muted">Rules match an executable name, full path, or path suffix. Scope limits whether the rule applies to internet, LAN, or localhost domains.</p>
+      <form id="app-form" class="form-grid compact">
+        <label>App match<input name="app_match" placeholder="chrome.exe" required></label>
+        <label>Action
+          <select name="action"><option value="block">block</option><option value="allow">allow</option></select>
+        </label>
+        <label>Scope
+          <select name="scope">
+            <option value="all">all</option>
+            <option value="internet" selected>internet</option>
+            <option value="lan">lan</option>
+            <option value="localhost">localhost</option>
+          </select>
+        </label>
+        <button type="submit">Add app rule</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>App match</th><th>Action</th><th>Scope</th><th></th></tr></thead>
+          <tbody id="app-rules-body"></tbody>
+        </table>
+      </div>
+
+      <h2>Packet blocking</h2>
+      <p id="firewall-note" class="muted">On Windows these commands create Windows Firewall rules and need administrator rights. Linux and Android use DNS filtering only.</p>
+      <form id="firewall-form" class="form-grid compact">
+        <label>App path<input name="path" placeholder="C:\Program Files\App\app.exe" required></label>
+        <button type="submit">Block app outbound</button>
+      </form>
+      <div class="row-actions">
+        <button id="preset-outbound">Block all outbound</button>
+        <button id="preset-inbound">Block all inbound</button>
+        <button id="clear-firewall" class="quiet">Clear my rules</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rule</th><th>Direction</th><th>Program</th><th></th></tr></thead>
+          <tbody id="firewall-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="panel hidden">
+      <h2>Settings</h2>
+      <form id="settings-form" class="form-grid">
+        <label>Bind address<input name="bind_addr" placeholder="127.0.0.1"></label>
+        <label>DNS port<input name="dns_port" type="number" min="1" max="65535"></label>
+        <label>Fallback port<input name="fallback_port" type="number" min="1" max="65535"></label>
+        <label>Primary DoH URL<input name="primary_doh_url" type="url"></label>
+        <label>Fallback DoH URL<input name="fallback_doh_url" type="url"></label>
+        <label>Update interval (hours)<input name="update_interval_hours" type="number" min="1"></label>
+        <label class="check"><input name="auto_update" type="checkbox"> Auto update filter lists</label>
+        <label class="check"><input name="block_inbound" type="checkbox"> Declare inbound blocking</label>
+        <label class="check"><input name="block_all_internet" type="checkbox"> Declare all-internet blocking</label>
+        <label>Default action
+          <select name="default_action"><option value="allow">allow</option><option value="block">block</option></select>
+        </label>
+        <button type="submit">Save settings</button>
+      </form>
+
+      <p id="tray-note" class="muted">Closing this window hides it to the system tray; the DNS engine keeps running in the background. Click the tray icon to reopen the dashboard, or use the tray menu to quit (quit restores your normal DNS).</p>
+
+      <h2>System DNS</h2>
+      <p id="system-dns-note" class="muted">Pointing the OS at this resolver is optional and separate from firewall blocking. Changing system DNS needs administrator rights.</p>
+      <p id="dns-saved" class="small muted"></p>
+      <div class="form-grid compact">
+        <label>Interface<input id="dns-interface" placeholder="12 (Windows) or eth0 (Linux)"></label>
+        <button id="dns-report">Show current DNS</button>
+        <button id="dns-apply">Set to 127.0.0.1</button>
+        <button id="dns-reset" class="quiet">Reset</button>
+      </div>
+      <div class="row-actions">
+        <button id="dns-auto">Apply on active interface</button>
+      </div>
+      <pre id="dns-output" class="output">No report yet.</pre>
+
+      <h2>Login autostart</h2>
+      <p id="autostart-note" class="muted">Install two Windows scheduled tasks: the app starts at login with administrator rights and <code>--system-wide</code>, and a <code>--dns-guard</code> watchdog restores the recorded DNS and browser policy if the app stops, crashes, or is killed.</p>
+      <p id="autostart-status" class="small muted"></p>
+      <div class="row-actions">
+        <button id="autostart-install">Install at login</button>
+        <button id="autostart-remove" class="quiet">Remove</button>
+      </div>
+
+      <h2>Browser secure DNS</h2>
+      <p id="doh-note" class="muted">Chromium browsers can bypass OS DNS with their own DNS-over-HTTPS setting. Disabling the enterprise policy for Brave, Chrome, and Edge keeps browser queries on this resolver. The prior policy values are recorded for restoration.</p>
+      <p id="doh-status" class="small muted"></p>
+      <div class="row-actions">
+        <button id="doh-disable">Disable browser DoH</button>
+        <button id="doh-restore" class="quiet">Restore browser DoH</button>
+      </div>
+
+      <h2>Data directory</h2>
+      <p id="data-dir" class="muted mono">—</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
